@@ -2,8 +2,22 @@
 
 @import "~milligram/dist/milligram";
 
-.column > p {
-    padding-top: 10ex;
-    text-align: center;
+.card {
+  font-size: 2rem;
+  width: 4rem;
+  height: 4rem;
+  margin: 0.25rem;
+  background-color: grey;
+  color: black;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  touch-action: manipulation;
+}
+
+.card.empty {
+  background-color: transparent;
 }
 

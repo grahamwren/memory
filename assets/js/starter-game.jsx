@@ -2,46 +2,107 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import _ from 'lodash';
 
+import Card, {EmptyCard} from './card';
+
+const HIDE_DELAY = 1000;
+
 export default function game_init(root) {
-  ReactDOM.render(<Starter />, root);
+  ReactDOM.render(<Memory/>, root);
 }
 
-class Starter extends React.Component {
+const getCards = _.memoize(n => _.times(n * n / 2, i => String.fromCharCode(i + 65)));
+const getBoard = n => _.chunk(_.shuffle([...getCards(n), ...getCards(n)]), n);
+const orMap = a => a.reduce((acc, v) => acc || v, false);
+const getSize = defaultV => {
+  const size = Number(prompt(
+    `What size game do you want? (Must be even, defaults to ${defaultV})` ,
+    `${defaultV}`)
+  ) || defaultV;
+  return (size % 2) === 0 ? size : size + 1;
+};
+
+
+class Memory extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { left: false };
+    this.state = {
+      win: false,
+      boardCards: getBoard(getSize(4)),
+      showingCards: []
+    };
   }
 
-  swap(_ev) {
-    let state1 = _.assign({}, this.state, { left: !this.state.left });
-    this.setState(state1);
+  componentDidUpdate() {
+    if (this.state.win && confirm('You Won! Would you like to play again?')) {
+      return this.resetGame();
+    }
   }
 
-  hax(_ev) {
-    alert("hax!");
+  resetGame() {
+    this.setState({
+      win: false,
+      boardCards: getBoard(getSize(4)),
+      showingCards: []
+    });
+  }
+
+  getHandleCardClicked(x, y, value) {
+    return () => {
+      if (this.state.showingCards.length > 1) return;
+
+      if (this.state.showingCards.length === 1) {
+        setTimeout(() => {
+          const [card1, card2] = this.state.showingCards;
+          if (card1.value === card2.value)
+            this.removeCards(card1, card2);
+
+          this.setState({
+            ...this.state,
+            showingCards: []
+          });
+        }, HIDE_DELAY);
+      }
+
+      this.setState({
+        ...this.state,
+        showingCards: this.state.showingCards.concat([{x, y, value}])
+      });
+    };
+  }
+
+  removeCards(...cards) {
+    const boardCards = this.state.boardCards;
+    cards.forEach(({x, y}) => {
+      boardCards[y][x] = null;
+    });
+    this.setState({...this.state, boardCards, win: !orMap(_.flatten(boardCards))});
   }
 
   render() {
-    let button = <div className="column" onMouseMove={this.swap.bind(this)}>
-      <p><button onClick={this.hax.bind(this)}>Click Me</button></p>
-    </div>;
+    const {boardCards, showingCards: [showCard1, showCard2]} = this.state;
 
-    let blank = <div className="column">
-      <p>Nothing here.</p>
-    </div>;
-
-    if (this.state.left) {
-      return <div className="row">
-        {button}
-        {blank}
-      </div>;
-    }
-    else {
-      return <div className="row">
-        {blank}
-        {button}
-      </div>;
-    }
+    return (
+      <div className="board">
+        {boardCards.map((row, y) => (
+          <div className="row" key={`row-${y}`}>
+            {row.map((cardValue, x) => {
+              const curCard = {x, y, value: cardValue};
+              const showCard = _.isEqual(curCard, showCard1) || _.isEqual(curCard, showCard2);
+              return cardValue ?
+                <Card
+                  key={`card-${x}-${y}`}
+                  flip={showCard}
+                  onClick={this.getHandleCardClicked(x, y, cardValue)}
+                  value={cardValue}
+                /> :
+                <EmptyCard
+                  key={`card-${x}-${y}`}
+                />;
+            })}
+          </div>
+        ))}
+      </div>
+    );
   }
 }
 
