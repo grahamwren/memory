@@ -5,14 +5,17 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Memory · Phoenix Framework</title>
+    <link rel="stylesheet" href="//cs4550.maineisland.co/shared-style.css">
     <link rel="stylesheet" href="<%= Routes.static_url(@conn, "/css/app.css") %>"/>
   </head>
   <body>
-    <main role="main" class="container">
-      <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
-      <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+    <section class="links">
+      <a href="//cs4550.maineisland.co">CS4550</a>
+      <a href="https://github.com/grahamwren/memory">Github</a>
+    </section>
+    <section class="game">
       <%= render @view_module, @view_template, assigns %>
-    </main>
+    </section>
     <script type="text/javascript" src="<%= Routes.static_url(@conn, "/js/app.js") %>"></script>
   </body>
 </html>

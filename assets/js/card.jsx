@@ -1,7 +1,19 @@
 import React from 'react';
 
-export default function Card({flip, onClick, value}) {
-  return <div className="card" onClick={onClick}>{flip ? value : " "}</div>
-}
+export default ({flip, onClick, value}) => (
+  <div className="card column" onClick={onClick}>
+    <div className={"card-value-container"}>
+      <div className="card-value">
+        {flip ? value : " "}
+      </div>
+    </div>
+  </div>
+);
 
-export const EmptyCard = () => <div className="card empty"/>;
+export const EmptyCard = () => (
+  <div className="card column empty">
+    <div className={"card-value-container"}>
+      <div className="card-value"/>
+    </div>
+  </div>
+);

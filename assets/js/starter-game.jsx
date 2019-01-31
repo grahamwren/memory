@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {Fragment, Component} from 'react';
 import ReactDOM from 'react-dom';
 import _ from 'lodash';
 
@@ -21,29 +21,28 @@ const getSize = defaultV => {
   return (size % 2) === 0 ? size : size + 1;
 };
 
+const getMemoryStartState = () => ({
+  win: false,
+  clicks: 0,
+  boardCards: getBoard(getSize(4)),
+  showingCards: []
+});
 
-class Memory extends React.Component {
+class Memory extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      win: false,
-      boardCards: getBoard(getSize(4)),
-      showingCards: []
-    };
+    this.state = getMemoryStartState();
   }
 
   componentDidUpdate() {
-    if (this.state.win && confirm('You Won! Would you like to play again?')) {
+    const {win, clicks} = this.state;
+    if (win && confirm(`You won in ${clicks} clicks! Would you like to play again?`)) {
       return this.resetGame();
     }
   }
 
   resetGame() {
-    this.setState({
-      win: false,
-      boardCards: getBoard(getSize(4)),
-      showingCards: []
-    });
+    this.setState(getMemoryStartState());
   }
 
   getHandleCardClicked(x, y, value) {
@@ -65,6 +64,7 @@ class Memory extends React.Component {
 
       this.setState({
         ...this.state,
+        clicks: this.state.clicks + 1,
         showingCards: this.state.showingCards.concat([{x, y, value}])
       });
     };
@@ -79,29 +79,35 @@ class Memory extends React.Component {
   }
 
   render() {
-    const {boardCards, showingCards: [showCard1, showCard2]} = this.state;
+    const {boardCards, clicks, showingCards: [showCard1, showCard2]} = this.state;
 
     return (
-      <div className="board">
-        {boardCards.map((row, y) => (
-          <div className="row" key={`row-${y}`}>
-            {row.map((cardValue, x) => {
-              const curCard = {x, y, value: cardValue};
-              const showCard = _.isEqual(curCard, showCard1) || _.isEqual(curCard, showCard2);
-              return cardValue ?
-                <Card
-                  key={`card-${x}-${y}`}
-                  flip={showCard}
-                  onClick={this.getHandleCardClicked(x, y, cardValue)}
-                  value={cardValue}
-                /> :
-                <EmptyCard
-                  key={`card-${x}-${y}`}
-                />;
-            })}
-          </div>
-        ))}
-      </div>
+      <Fragment>
+        <div className="score">
+          Clicks {clicks}
+          <button className="reset" onClick={this.resetGame.bind(this)}>Reset Game</button>
+        </div>
+        <div className="board container">
+          {boardCards.map((row, y) => (
+            <div className="row" key={`row-${y}`}>
+              {row.map((cardValue, x) => {
+                const curCard = {x, y, value: cardValue};
+                const showCard = _.isEqual(curCard, showCard1) || _.isEqual(curCard, showCard2);
+                return cardValue ?
+                  <Card
+                    key={`card-${x}-${y}`}
+                    flip={showCard}
+                    onClick={this.getHandleCardClicked(x, y, cardValue)}
+                    value={cardValue}
+                  /> :
+                  <EmptyCard
+                    key={`card-${x}-${y}`}
+                  />;
+              })}
+            </div>
+          ))}
+        </div>
+      </Fragment>
     );
   }
 }

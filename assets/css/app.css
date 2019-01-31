@@ -2,22 +2,65 @@
 
 @import "~milligram/dist/milligram";
 
-.card {
-  font-size: 2rem;
-  width: 4rem;
-  height: 4rem;
-  margin: 0.25rem;
-  background-color: grey;
-  color: black;
+#root {
+  min-width: 100%;
+  min-height: 100%;
+}
 
+.game {
+  padding: 2rem 33%;
+}
+
+.score {
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: space-around;
+}
 
+.row .column.card {
+  margin: 0.25rem;
+  background-color: #D3D3D3;
   touch-action: manipulation;
 }
 
 .card.empty {
-  background-color: transparent;
+  background-color: transparent !important;
 }
 
+.card-value-container {
+  width: 100%;
+  position: relative;
+  padding-bottom: 100%;
+  touch-action: inherit;
+}
+
+.card-value {
+  position: absolute;
+  top: 0; bottom: 0; left: 0; right: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: black;
+  font-size: 2rem;
+
+  touch-action: inherit;
+}
+
+.reset {
+  margin-left: 1rem;
+}
+
+@media only screen and (max-device-width: 768px) {
+  .calc-container {
+    width: calc(100vw - 2rem);
+    height: calc(60vh);
+    font-size: 6rem !important;
+  }
+
+  .button {
+    font-size: 6rem !important;
+    touch-action: manipulation;
+  }
+}
