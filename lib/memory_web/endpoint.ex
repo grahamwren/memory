@@ -1,5 +1,5 @@
 defmodule MemoryWeb.Endpoint do
-  use Phoenix.Endpoint, otp_app: :memory
+  use Phoenix.Endpoint, otp_app: :memory2
 
   socket "/socket", MemoryWeb.UserSocket,
     websocket: true,
@@ -10,7 +10,7 @@ defmodule MemoryWeb.Endpoint do
   # You should set gzip to true if you are running phoenix.digest
   # when deploying your static files in production.
   plug Plug.Static,
-    at: "/", from: :memory, gzip: false,
+    at: "/", from: :memory2, gzip: false,
     only: ~w(css fonts images js favicon.ico robots.txt)
 
   # Code reloading can be explicitly enabled under the

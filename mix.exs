@@ -3,7 +3,7 @@ defmodule Memory.MixProject do
 
   def project do
     [
-      app: :memory,
+      app: :memory2,
       version: "0.1.0",
       elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env),
