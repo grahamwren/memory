@@ -14,6 +14,8 @@ defmodule Memory.Application do
       # {Memory.Worker, arg},
     ]
 
+    Memory.GameServer.setup
+
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Memory.Supervisor]
