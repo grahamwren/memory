@@ -34,6 +34,10 @@ defmodule Memory.GameServer do
     GenServer.call(reg(name), {:show, args})
   end
 
+  def reset(name) do
+    GenServer.call(reg(name), :reset)
+  end
+
   def get_view(name) do
     GenServer.call(reg(name), :get_view)
   end
@@ -54,11 +58,16 @@ defmodule Memory.GameServer do
   def handle_call({:show, {x, y}}, _from, game) do
     {action, game} = Game.show(game, x, y)
     if action != :none, do: Process.send_after(self(), {action, game.view_state.showing}, 1_000)
-    {:reply, game.view_state.matrix, game}
+    {:reply, game.view_state, game}
   end
 
   def handle_call(:get_view, _from, game) do
-    {:reply, game.view_state.matrix, game}
+    {:reply, game.view_state, game}
+  end
+
+  def handle_call(:reset, _from, game) do
+    {:ok, game} = Game.new game.name
+    {:reply, game.view_state, game}
   end
 
   # Handle Scheduled :hide and :delete
