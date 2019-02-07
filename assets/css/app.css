@@ -17,6 +17,18 @@
   justify-content: space-around;
 }
 
+.board {
+  position: relative;
+}
+
+.win-message {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 40%;
+  text-align: center;
+}
+
 .row .column.card {
   margin: 0.25rem;
   background-color: #D3D3D3;
