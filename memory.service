@@ -6,11 +6,11 @@ Type=simple
 User=memory
 Group=memory
 Restart=on-failure
-Environment=MIX_ENV=prod "PORT=4791"
+Environment=MIX_ENV=prod "PORT=4792"
 Environment=LANG=en_US.UTF-8
 
-WorkingDirectory=/home/memory/memory
-ExecStart=/home/memory/memory/start.sh
+WorkingDirectory=/home/memory2/memory
+ExecStart=/home/memory2/memory/start.sh
 
 [Install]
 WantedBy=multi-user.target
