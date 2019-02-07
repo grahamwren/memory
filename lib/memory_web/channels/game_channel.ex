@@ -1,15 +1,13 @@
 defmodule MemoryWeb.GameChannel do
   use MemoryWeb, :channel
 
-  alias Memory.Game
+  alias Memory.GameServer
 
   def join("game:" <> name, payload, socket) do
     if authorized?(payload) do
-      {:ok, game} = Game.new
-      socket = socket
-      |> assign(:game, game)
-      |> assign(:name, name)
-      {:ok, %{join: name, game: game.clientView()}, socket}
+      {:ok, _} = GameServer.ensure name
+      socket = assign(socket, :name, name)
+      {:ok, %{join: name, state: GameServer.get_view(name)}, socket}
     else
       {:error, %{reason: "unauthorized"}}
     end

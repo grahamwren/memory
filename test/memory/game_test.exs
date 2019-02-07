@@ -26,7 +26,10 @@ defmodule Memory.GameTest do
       |> Matrix.update(1, 1, "A")
     game = %Game{game | internal_state: internal}
 
-    game = Game.show(game, 2, 3)
+    {action, game} = Game.show(game, 2, 3)
+
+    # first shown, action is :none
+    assert action == :none
     assert game.view_state.showing == [{2, 3}]
     assert game.view_state.matrix == [
       [:hide, :hide, :hide, :hide],
@@ -35,15 +38,16 @@ defmodule Memory.GameTest do
       [:hide, :hide, "A",   :hide],
     ]
 
-    game = Game.show(game, 1, 1)
+    {action, game} = Game.show(game, 1, 1)
 
-    # card was the same so show none and delete both
-    assert game.view_state.showing == []
+    # card was the same so show both with action delete
+    assert action == :delete
+    assert game.view_state.showing == [{1,1}, {2,3}]
     assert game.view_state.matrix == [
-      [:hide, :hide,   :hide,   :hide],
-      [:hide, :delete, :hide,   :hide],
-      [:hide, :hide,   :hide,   :hide],
-      [:hide, :hide,   :delete, :hide],
+      [:hide, :hide, :hide, :hide],
+      [:hide, "A",   :hide, :hide],
+      [:hide, :hide, :hide, :hide],
+      [:hide, :hide, "A",   :hide],
     ]
   end
 
@@ -55,7 +59,10 @@ defmodule Memory.GameTest do
       |> Matrix.update(1, 1, "B")
     game = %Game{game | internal_state: internal}
 
-    game = Game.show(game, 2, 3)
+    {action, game} = Game.show(game, 2, 3)
+
+    # only one card shown so show it with action :none
+    assert action == :none
     assert game.view_state.showing == [{2, 3}]
     assert game.view_state.matrix == [
       [:hide, :hide, :hide, :hide],
@@ -64,9 +71,10 @@ defmodule Memory.GameTest do
       [:hide, :hide, "A",   :hide],
     ]
 
-    game = Game.show(game, 1, 1)
+    {action, game} = Game.show(game, 1, 1)
 
-    # card was the same so show none and delete both
+    # card was different so show both with action :hide
+    assert action == :hide
     assert game.view_state.showing == [{1,1}, {2,3}]
     assert game.view_state.matrix == [
       [:hide, :hide, :hide, :hide],
@@ -99,7 +107,8 @@ defmodule Memory.GameTest do
       }
     }
 
-    game = Game.show(game, 2, 3)
+    {action, game} = Game.show(game, 2, 3)
+    assert action == :none
     assert game.view_state.showing == [{2, 3}]
     assert game.view_state.matrix == [
       [:delete, :delete, :delete, :delete],
@@ -110,17 +119,45 @@ defmodule Memory.GameTest do
     # ensure game not won yet
     assert !game.view_state.win
 
-    game = Game.show(game, 1, 1)
+    {action, game} = Game.show(game, 1, 1)
 
-    # card was the same so show none and delete both
-    assert game.view_state.showing == []
+    # was match so both shown, action :delete, win true
+    assert action == :delete
+    assert game.view_state.showing == [{1, 1}, {2, 3}]
     assert game.view_state.matrix == [
       [:delete, :delete, :delete, :delete],
+      [:delete, "A",     :delete, :delete],
       [:delete, :delete, :delete, :delete],
-      [:delete, :delete, :delete, :delete],
-      [:delete, :delete, :delete, :delete],
+      [:delete, :delete, "A",     :delete],
     ]
     # ensure game won
     assert game.view_state.win
+  end
+
+  test "hide showing" do
+    {:ok, game} = Game.new "default"
+    {_, game} = Game.show game, 1, 2
+    {_, game} = Game.show game, 1, 3
+    game = Game.hide_showing game
+    assert game.view_state.matrix == [
+      [:hide, :hide, :hide, :hide],
+      [:hide, :hide, :hide, :hide],
+      [:hide, :hide, :hide, :hide],
+      [:hide, :hide, :hide, :hide],
+    ]
+  end
+
+  test "show deleted" do
+    {:ok, game} = Game.new "default"
+    view_matrix = Matrix.update game.view_state.matrix, 1, 1, :delete
+    game = %Game{
+      game |
+      view_state: %{
+        game.view_state |
+        matrix: view_matrix
+      }
+    }
+    {_, new_game} = Game.show game, 1, 1
+    assert new_game == game
   end
 end

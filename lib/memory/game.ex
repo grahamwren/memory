@@ -34,73 +34,103 @@ defmodule Memory.Game do
     }}
   end
 
-  def show(game, x, y) do
-    %{view_state: %{showing: showing}} = game
-    case length(showing) do
-      1 -> show_new(game, x, y)
-      _ -> show_new_and_hide(game, x, y)
-    end
-  end
+  # when 0 cards showing:
+  # - show card
+  # - send_action :none
+  def show(%{view_state: %{showing: []}} = game, x, y), do: {:none, show_card(game, x, y)}
 
-  # when there is 1 card showing
-  def show_new(game, x, y) do
-    %{view_state: view, internal_state: internal} = game
-
-    new_card = Matrix.fetch internal, x, y
-    [{current_x, current_y} | _] = view.showing
-    current_card = Matrix.fetch internal, current_x, current_y
-
-    if (current_card == new_card) do
-      # if card was correct, update view with :delete in both places
-      view_matrix =
-        view.matrix
-        |> Matrix.update(x, y, :delete)
-        |> Matrix.update(current_x, current_y, :delete)
-
-      # deleted two cards so inc deleted_count
-      deleted = game.deleted_count + 2
-
-      if (deleted >= game.size * game.size) do
-        %{game |
-          deleted_count: deleted,
-          view_state: %{
-            view |
-            showing: [],
-            matrix: view_matrix,
-            win: true
-          }
-        }
-      else
-        %{game |
-          deleted_count: deleted,
-          view_state: %{
-            view |
-            showing: [],
-            matrix: view_matrix
-          }
-        }
-      end
+  # when 1 card showing:
+  # - if (card is already shown?): return game unchanged
+  # - show card
+  # - if (was match?): send_action :delete
+  #   else:            send_action :hide
+  def show(%{view_state: %{showing: showing}} = game, x, y) when length(showing) == 1 do
+    if (hd(showing) == {x, y}) do
+      {:none, game}
     else
-      # if card was not correct, show both
-      view_matrix = Matrix.update view.matrix, x, y, new_card
-      %{game | view_state: %{view | showing: [{x,y} | view.showing], matrix: view_matrix}}
+      # show new card
+      game = show_card(game, x, y)
+      {action, win} = if is_showing_match(game), do: {:delete, true}, else: {:hide, false}
+
+      {action, %Game{
+        game |
+        view_state: %{
+          game.view_state |
+          win: win
+        }
+      }}
     end
   end
 
-  # when there is either 0 or 2 cards showing
-  def show_new_and_hide(game, x, y) do
+  # when > 1 cards showing:
+  # - if (was match?): delete_showing
+  #   else: hide_showing
+  # - show_card
+  # - send_action :none
+  def show(game, x, y) do
+    game = if is_showing_match(game) do
+      game |> delete_showing |> show_card(x, y)
+    else
+      game |> hide_showing |> show_card(x, y)
+    end
+
+    {:none, game}
+  end
+
+  def show_card(game, x, y) do
     %{view_state: view, internal_state: internal} = game
+    if Matrix.fetch(view.matrix, x, y) == :delete do
+      game
+    else
+      # show the requested card
+      new_card = Matrix.fetch internal, x, y
+      view_matrix = Matrix.update view.matrix, x, y, new_card
 
-    # hide each of the previously showing cards
-    view_matrix = List.foldl view.showing, view.matrix, fn {shown_x, shown_y}, v_matrix ->
-      Matrix.update v_matrix, shown_x, shown_y, :hide
+      # return game with updated view, showing only the new card
+      %Game{game | view_state: %{view | showing: [{x, y} | view.showing], matrix: view_matrix}}
+    end
+  end
+
+  def update_view_matrix(%{view_state: view} = game, positions, value) do
+    # update at each of the given positions
+    view_matrix = List.foldl positions, view.matrix, fn {shown_x, shown_y}, v_matrix ->
+      Matrix.update v_matrix, shown_x, shown_y, value
     end
 
-    # show the requested card
-    new_card = Matrix.fetch internal, x, y
-    view_matrix = Matrix.update view_matrix, x, y, new_card
-
-    # return game with updated view, showing only the new card
-    %{game | view_state: %{view | showing: [{x, y}], matrix: view_matrix}}
+    %Game{game | view_state: %{view | matrix: view_matrix}}
   end
+
+  def hide_showing(%{view_state: view} = game) do
+    game = update_view_matrix(game, view.showing, :hide)
+    game = %Game{
+      game |
+      view_state: %{
+        game.view_state |
+        showing: []
+      }
+    }
+  end
+
+  def delete_showing(game) do
+    game = update_view_matrix(game, game.view_state.showing, :delete)
+
+    # deleted showing cards so inc deleted_count
+    deleted = game.deleted_count + length(game.view_state.showing)
+
+    %Game{game |
+      deleted_count: deleted,
+      view_state: %{
+        game.view_state |
+        showing: [],
+        win: deleted >= game.size * game.size # win when deleted every card
+      }
+    }
+  end
+
+  def is_showing_match(%{view_state: %{showing: [{f_x, f_y}, {s_x, s_y}], matrix: view_matrix}}) do
+    first_card = Matrix.fetch view_matrix, f_x, f_y
+    second_card = Matrix.fetch view_matrix, s_x, s_y
+    first_card == second_card
+  end
+  def is_showing_match(_), do: false
 end
