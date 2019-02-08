@@ -42,7 +42,7 @@ defmodule Memory.GameTest do
     {action, game} = Game.show(game, 1, 1)
 
     # card was the same so show both with action delete
-    assert action == :delete
+    assert action == :handle
     assert game.view_state.showing == [[1,1], [2,3]]
     assert game.view_state.matrix == [
       [:hide, :hide, :hide, :hide],
@@ -75,7 +75,7 @@ defmodule Memory.GameTest do
     {action, game} = Game.show(game, 1, 1)
 
     # card was different so show both with action :hide
-    assert action == :hide
+    assert action == :handle
     assert game.view_state.showing == [[1,1], [2,3]]
     assert game.view_state.matrix == [
       [:hide, :hide, :hide, :hide],
@@ -122,8 +122,8 @@ defmodule Memory.GameTest do
 
     {action, game} = Game.show(game, 1, 1)
 
-    # was match so both shown, action :delete, win true
-    assert action == :delete
+    # was match so both shown, action :handle
+    assert action == :handle
     assert game.view_state.showing == [[1, 1], [2, 3]]
     assert game.view_state.matrix == [
       [:delete, :delete, :delete, :delete],
@@ -131,20 +131,51 @@ defmodule Memory.GameTest do
       [:delete, :delete, :delete, :delete],
       [:delete, :delete, "A",     :delete],
     ]
+
+    # run handle, win: true
+    game = Game.handle_showing game
     # ensure game won
     assert game.view_state.win
   end
 
   test "hide showing" do
     {:ok, game} = Game.new "default"
-    {_, game} = Game.show game, 1, 2
-    {_, game} = Game.show game, 1, 3
-    game = Game.hide_showing game
+    internal =
+      game.internal_state
+      |> Matrix.update(2, 3, "A")
+      |> Matrix.update(1, 1, "B")
+    game = %Game{game | internal_state: internal}
+
+    {_, game} = Game.show game, 1, 1
+    {_, game} = Game.show game, 2, 3
+    game = Game.handle_showing game
+
     assert game.view_state.matrix == [
       [:hide, :hide, :hide, :hide],
       [:hide, :hide, :hide, :hide],
       [:hide, :hide, :hide, :hide],
       [:hide, :hide, :hide, :hide],
+    ]
+  end
+
+
+  test "delete showing" do
+    {:ok, game} = Game.new "default"
+    internal =
+      game.internal_state
+      |> Matrix.update(2, 3, "A")
+      |> Matrix.update(1, 1, "A")
+    game = %Game{game | internal_state: internal}
+
+    {_, game} = Game.show game, 1, 1
+    {_, game} = Game.show game, 2, 3
+    game = Game.handle_showing game
+
+    assert game.view_state.matrix == [
+      [:hide, :hide,   :hide,   :hide],
+      [:hide, :delete, :hide,   :hide],
+      [:hide, :hide,   :hide,   :hide],
+      [:hide, :hide,   :delete, :hide],
     ]
   end
 

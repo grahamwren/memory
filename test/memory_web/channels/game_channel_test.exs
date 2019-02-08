@@ -10,8 +10,8 @@ defmodule MemoryWeb.GameChannelTest do
   end
 
   test "show replies with status ok", %{socket: socket} do
-    ref = push socket, "show", %{"x" => 1, "y" => 1}
-    assert_reply ref, :ok, %{}
+    push socket, "show", %{"x" => 1, "y" => 1}
+    assert_broadcast "ok", %{view: %{}}
   end
 
   test "get_view replies with status ok", %{socket: socket} do
@@ -20,7 +20,7 @@ defmodule MemoryWeb.GameChannelTest do
   end
 
   test "reset replies with status ok", %{socket: socket} do
-    ref = push socket, "reset", %{"x" => 1, "y" => 1}
-    assert_reply ref, :ok, %{}
+    push socket, "reset", %{"x" => 1, "y" => 1}
+    assert_broadcast "ok", %{view: %{}}
   end
 end

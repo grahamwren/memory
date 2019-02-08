@@ -35,53 +35,22 @@ defmodule Memory.Game do
     }}
   end
 
-  # when 0 cards showing:
-  # - show card
-  # - send_action :none
-  def show(%{view_state: %{showing: []}} = game, x, y), do: {:none, show_card(game, x, y)}
-
-  # when 1 card showing:
-  # - if (card is already shown?): return game unchanged
-  # - show card
-  # - if (was match?): send_action :delete
-  #   else:            send_action :hide
-  def show(%{view_state: %{showing: showing}} = game, x, y) when length(showing) == 1 do
-    if (hd(showing) == [x, y]) do
-      {:none, game}
-    else
-      # show new card
-      game = show_card(game, x, y)
-      action = if is_showing_match(game), do: :delete, else: :hide
-      win = game.deleted_count == (game.size * game.size - 2)
-
-      {action, %Game{
-        game |
-        view_state: %{
-          game.view_state |
-          win: win
-        }
-      }}
-    end
-  end
-
-  # when > 1 cards showing:
-  # - if (was match?): delete_showing
-  #   else: hide_showing
-  # - show_card
-  # - send_action :none
   def show(game, x, y) do
-    game = if is_showing_match(game) do
-      game |> delete_showing |> show_card(x, y)
-    else
-      game |> hide_showing |> show_card(x, y)
-    end
+    %{view_state: %{showing: showing}} = game
+    action = if length(showing) == 1 && hd(showing) != [x, y],
+      do: :handle,
+      else: :none
+    game = if length(showing) > 1,
+      do: game |> handle_showing |> show_card(x, y),
+      else: game |> show_card(x, y)
 
-    {:none, game}
+    {action, game}
   end
 
   def show_card(game, x, y) do
     %{view_state: view, internal_state: internal} = game
-    if Matrix.fetch(view.matrix, x, y) == :delete do
+    # if already showing or deleted, do nothing
+    if Matrix.fetch(view.matrix, x, y) != :hide do
       game
     else
       # show the requested card
@@ -110,29 +79,20 @@ defmodule Memory.Game do
     %Game{game | view_state: %{game.view_state | matrix: view_matrix}}
   end
 
-  def hide_showing(%{view_state: view} = game) do
-    game = update_view_matrix(game, view.showing, :hide)
+  def handle_showing(game) do
+    is_match? = is_showing_match(game)
+    value = if is_match?, do: :delete, else: :hide
+    deleted = game.deleted_count + if is_match?, do: length(game.view_state.showing), else: 0
+    win = deleted == game.size * game.size
+
+    game = update_view_matrix game, game.view_state.showing, value
     %Game{
       game |
-      view_state: %{
-        game.view_state |
-        showing: []
-      }
-    }
-  end
-
-  def delete_showing(game) do
-    game = update_view_matrix(game, game.view_state.showing, :delete)
-
-    # deleted showing cards so inc deleted_count
-    deleted = game.deleted_count + length(game.view_state.showing)
-
-    %Game{game |
       deleted_count: deleted,
       view_state: %{
         game.view_state |
         showing: [],
-        win: deleted >= game.size * game.size # win when deleted every card
+        win: win
       }
     }
   end

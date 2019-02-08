@@ -23,13 +23,10 @@ class Memory extends Component {
       .join()
       .receive('ok', this.gotView.bind(this))
       .receive('error', console.error);
-    this.fetchData(); // TODO: ugh
-  }
 
-  // TODO: delete this because ew
-  fetchData() {
-    this.channel.push('get_view').receive('ok', this.gotView.bind(this));
-    setTimeout(this.fetchData.bind(this), 250);
+    this.channel.on('ok', this.gotView.bind(this));
+    this.channel.on('error', this.gotView.bind(this));
+    this.channel.push('get_view');
   }
 
   gotView({view}) {
@@ -37,17 +34,11 @@ class Memory extends Component {
   }
 
   resetGame() {
-    this.channel
-      .push('reset', {})
-      .receive('ok', this.gotView.bind(this));
+    this.channel.push('reset', {});
   }
 
   getHandleCardClicked(x, y) {
-    return () => {
-      this.channel
-        .push('show', {x, y})
-        .receive('ok', this.gotView.bind(this))
-    };
+    return () => this.channel.push('show', {x, y});
   }
 
   render() {

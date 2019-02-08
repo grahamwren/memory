@@ -30,55 +30,63 @@ defmodule Memory.GameServer do
     end
   end
 
-  def show(name, args) do
-    GenServer.call(reg(name), {:show, args})
-  end
-
-  def reset(name) do
-    GenServer.call(reg(name), :reset)
-  end
-
-  def get_view(name) do
-    GenServer.call(reg(name), :get_view)
-  end
+  def register_state_listener(name, pid), do: GenServer.cast(reg(name), {:register, pid})
+  def show(name, args), do: GenServer.call(reg(name), {:show, args})
+  def reset(name), do: GenServer.call(reg(name), :reset)
+  def get_view(name), do: GenServer.call(reg(name), :get_view)
 
   # Internal API
 
   def start_link(name) do
     {:ok, game} = Game.new name
-    GenServer.start_link(__MODULE__, game, name: reg(name))
+    state = %{game: game, listeners: []}
+    GenServer.start_link(__MODULE__, state, name: reg(name))
   end
 
   # Server
 
-  def init(game) do
-    {:ok, game}
-  end
+  def init(state), do: {:ok, state}
 
-  def handle_call({:show, {x, y}}, _from, game) do
+  def handle_call({:show, {x, y}}, _from, %{listeners: listeners, game: game} = state) do
     {action, game} = Game.show(game, x, y)
-    if action != :none, do: Process.send_after(self(), {action, game.view_state.showing}, 1_000)
-    {:reply, game.view_state, game}
+    if action == :handle, do: Process.send_after(self(), {:handle, game.view_state.showing}, 1_000)
+    listeners = notify_listeners listeners, game.view_state
+    {:reply, game.view_state, %{state | listeners: listeners, game: game}}
   end
 
-  def handle_call(:get_view, _from, game) do
-    {:reply, game.view_state, game}
+  def handle_call(:get_view, _from, state) do
+    {:reply, state.game.view_state, state}
   end
 
-  def handle_call(:reset, _from, game) do
-    {:ok, game} = Game.new game.name
-    {:reply, game.view_state, game}
+  def handle_call(:reset, _from, state) do
+    {:ok, game} = Game.new state.game.name
+    {:reply, game.view_state, %{state | game: game}}
   end
 
-  # Handle Scheduled :hide and :delete
-
-  def handle_info({:hide, positions}, %{view_state: %{showing: showing}} = game) do
-    game = if positions == showing, do: Game.hide_showing(game), else: game
-    {:noreply, game}
+  def handle_cast({:register, pid}, state) do
+    {:noreply, %{state | listeners: [pid | state.listeners]}}
   end
 
-  def handle_info({:delete, positions}, %{view_state: %{showing: showing}} = game) do
-    game = if positions == showing, do: Game.delete_showing(game), else: game
-    {:noreply, game}
+  # Handle Scheduled
+
+  def handle_info({:handle, positions}, %{
+    listeners: listeners,
+    game: %{view_state: %{showing: showing}} = game
+  } = state) do
+    game = if positions == showing, do: Game.handle_showing(game), else: game
+    listeners = notify_listeners listeners, game.view_state
+    {:noreply, %{state | listeners: listeners, game: game}}
   end
+
+  # Helpers
+
+  def notify_listeners([pid | rest], view_state) do
+    if Process.alive?(pid) do
+      send pid, {:new_state, view_state}
+      [pid | notify_listeners(rest, view_state)]
+    else
+      notify_listeners rest, view_state
+    end
+  end
+  def notify_listeners([], _), do: []
 end
