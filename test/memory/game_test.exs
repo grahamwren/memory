@@ -12,7 +12,8 @@ defmodule Memory.GameTest do
       view_state: %{
         matrix: Matrix.build(4, 4, fn _x, _y -> :hide end),
         showing: [],
-        win: false
+        win: false,
+        show_count: 0
       },
       internal_state: game.internal_state
     }
@@ -30,7 +31,7 @@ defmodule Memory.GameTest do
 
     # first shown, action is :none
     assert action == :none
-    assert game.view_state.showing == [{2, 3}]
+    assert game.view_state.showing == [[2, 3]]
     assert game.view_state.matrix == [
       [:hide, :hide, :hide, :hide],
       [:hide, :hide, :hide, :hide],
@@ -42,7 +43,7 @@ defmodule Memory.GameTest do
 
     # card was the same so show both with action delete
     assert action == :delete
-    assert game.view_state.showing == [{1,1}, {2,3}]
+    assert game.view_state.showing == [[1,1], [2,3]]
     assert game.view_state.matrix == [
       [:hide, :hide, :hide, :hide],
       [:hide, "A",   :hide, :hide],
@@ -63,7 +64,7 @@ defmodule Memory.GameTest do
 
     # only one card shown so show it with action :none
     assert action == :none
-    assert game.view_state.showing == [{2, 3}]
+    assert game.view_state.showing == [[2, 3]]
     assert game.view_state.matrix == [
       [:hide, :hide, :hide, :hide],
       [:hide, :hide, :hide, :hide],
@@ -75,7 +76,7 @@ defmodule Memory.GameTest do
 
     # card was different so show both with action :hide
     assert action == :hide
-    assert game.view_state.showing == [{1,1}, {2,3}]
+    assert game.view_state.showing == [[1,1], [2,3]]
     assert game.view_state.matrix == [
       [:hide, :hide, :hide, :hide],
       [:hide, "B",   :hide, :hide],
@@ -109,7 +110,7 @@ defmodule Memory.GameTest do
 
     {action, game} = Game.show(game, 2, 3)
     assert action == :none
-    assert game.view_state.showing == [{2, 3}]
+    assert game.view_state.showing == [[2, 3]]
     assert game.view_state.matrix == [
       [:delete, :delete, :delete, :delete],
       [:delete, :hide,   :delete, :delete],
@@ -123,7 +124,7 @@ defmodule Memory.GameTest do
 
     # was match so both shown, action :delete, win true
     assert action == :delete
-    assert game.view_state.showing == [{1, 1}, {2, 3}]
+    assert game.view_state.showing == [[1, 1], [2, 3]]
     assert game.view_state.matrix == [
       [:delete, :delete, :delete, :delete],
       [:delete, "A",     :delete, :delete],
