@@ -12,26 +12,24 @@ https://github.com/grahamwren/memory
 
 
 3. What's the version number of your github release?
-
+v1.1.1
 
 
 4. What's the URL that you deployed to?
 http://memory2.cs4550.maineisland.co
 
 
-
 5. Is your game functionality complete? If not, what's missing?
-
-
+Yes
 
 
 6. Is your game properly deployed? If not, what went wrong?
-
-
+Yes
 
 
 7. How did you handle cards flipping back after a set timeout?
-
+This is implemented as a Process.send_after in the GameServer controller
+which calls functions on the Game model
 
 
 
